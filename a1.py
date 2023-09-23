@@ -9,12 +9,6 @@ from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-with open("fakes.txt", "r") as file:
-    fakes = file.readlines()
-
-with open("facts.txt", "r") as file:
-    facts = file.readlines()
-
 
 # Common Preprocessing
 def preprocess(text):
@@ -32,6 +26,7 @@ def preprocess(text):
 
 # Classify the corpus using three linear classifiers
 def classification(X, y):
+    print("===================================================")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=16)
 
     # Use force_alpha=False to prevent Underflow
@@ -51,14 +46,22 @@ def classification(X, y):
     svm_classifier.fit(X_train, y_train)
     y_pred_svm = svm_classifier.predict(X_test)
     print("SVM Accuracy:", accuracy_score(y_test, y_pred_svm))
+    print("===================================================")
+    print("")
 
+
+with open("fakes.txt", "r") as file:
+    fakes = file.readlines()
+
+with open("facts.txt", "r") as file:
+    facts = file.readlines()
 
 fakes_processed = [preprocess(fake) for fake in fakes]
 facts_processed = [preprocess(fact) for fact in facts]
 corpus_processed = fakes_processed + facts_processed
 y = [0] * len(fakes_processed) + [1] * len(facts_processed)
 
-# Feature extraction using N-gram
+# Special Preprocessing: Feature extraction using N-gram
 # N=1
 vectorized0 = CountVectorizer(ngram_range=(1, 1), analyzer='word')
 X0 = vectorized0.fit_transform(corpus_processed)
