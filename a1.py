@@ -8,6 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import GridSearchCV
 
 
 # Common Preprocessing
@@ -24,27 +25,37 @@ def preprocess(text):
     return ' '.join(words)
 
 
+# 5 folds cross validation to tune parameter
+def parameterTuning(classifier, param_grid, X_train, y_train):
+    grid_search = GridSearchCV(classifier, param_grid, cv=5, scoring='accuracy')
+    grid_search.fit(X_train, y_train)
+    print("-----------------------------------------")
+    print("Best parameter:", grid_search.best_params_)
+    print("Best cross-validation score:", grid_search.best_score_)
+    return grid_search.best_estimator_
+
+
 # Classify the corpus using three linear classifiers
 def classification(X, y):
     print("===================================================")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=16)
 
     # Use force_alpha=False to prevent Underflow
-    nb_classifier = MultinomialNB(force_alpha=False)
-    nb_classifier.fit(X_train, y_train)
-    y_pred_nb = nb_classifier.predict(X_test)
+    best_nb = parameterTuning(MultinomialNB(),
+                              {'alpha': [0.01, 0.1, 0.5, 1.0, 2.0, 5.0, 10.0]}, X_train, y_train)
+    y_pred_nb = best_nb.predict(X_test)
     print("Naive Bayes Accuracy:", accuracy_score(y_test, y_pred_nb))
 
     # Logistic Regression classifier
-    lr_classifier = LogisticRegression(max_iter=100000)
-    lr_classifier.fit(X_train, y_train)
-    y_pred_lr = lr_classifier.predict(X_test)
+    best_lr = parameterTuning(LogisticRegression(max_iter=100000),
+                              {'C': [0.001, 0.01, 0.1, 1, 10, 100], 'penalty': ['l2']}, X_train, y_train)
+    y_pred_lr = best_lr.predict(X_test)
     print("Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_lr))
 
     # SVM classifier
-    svm_classifier = SVC(kernel='linear')
-    svm_classifier.fit(X_train, y_train)
-    y_pred_svm = svm_classifier.predict(X_test)
+    best_svm = parameterTuning(SVC(kernel='linear'),
+                               {'C': [0.1, 1, 10]}, X_train, y_train)
+    y_pred_svm = best_svm.predict(X_test)
     print("SVM Accuracy:", accuracy_score(y_test, y_pred_svm))
     print("===================================================")
     print("")
